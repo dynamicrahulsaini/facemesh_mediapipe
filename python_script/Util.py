@@ -1,10 +1,7 @@
-import bleach
 import cv2
-from cv2 import Mat
 import numpy as np
 import mediapipe as mp
 from math import atan, pi
-from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmarkList
 
 class Util:
     
@@ -37,7 +34,7 @@ class Util:
         else:
             return (coordinates[1][0], coordinates[0][1]), (coordinates[2][0], coordinates[3][1]) 
         
-    def remove_whitespace(self, image: Mat, blend: np.ndarray, x: int, y: int, threshold: int=225) -> None:
+    def remove_whitespace(self, image: cv2.Mat, blend: np.ndarray, x: int, y: int, threshold: int=225) -> None:
         for i in range(blend.shape[0]):
             for j in range(blend.shape[1]):
                 for k in range(3):
@@ -54,7 +51,7 @@ class Util:
             print("Neutral angle => {}".format(self.neutral_angle))
         return angle
     
-    def get_rotated_image(self, im: Mat, angle: float) -> Mat:
+    def get_rotated_image(self, im: cv2.Mat, angle: float) -> cv2.Mat:
         mask = (im == [0,0,0,0]).all(axis=2)
         im[mask] = [255, 255, 255, 0]
         
@@ -86,24 +83,24 @@ class Util:
         )
         return rotatedMat[:, ::-1]
     
-    def get_landmarks(self, image: Mat) -> tuple:
+    def get_landmarks(self, image: cv2.Mat) -> tuple:
         h,w = image.shape[:2]
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         face_mesh_result = self.face_mesh.process(image)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         
         if face_mesh_result.multi_face_landmarks:
-            landmarksList: NormalizedLandmarkList = face_mesh_result.multi_face_landmarks[0]
+            landmarksList = face_mesh_result.multi_face_landmarks[0]
             landmarks = []
             for i, landmark in enumerate(landmarksList.landmark):
                 if i in [71, 123, 301, 352]:
                     landmarks.append((int(landmark.x * w), int(landmark.y * h)))
         return landmarks, self.get_angle(landmarks)
     
-    def add_effect(self, image: Mat, effect_path) -> None:
+    def add_effect(self, image: cv2.Mat, effect_path) -> None:
         cords, angle = self.get_landmarks(image)
         
-        rotated_image: Mat = self.get_rotated_image(
+        rotated_image: cv2.Mat = self.get_rotated_image(
         cv2.imread(
             effect_path,
             cv2.IMREAD_UNCHANGED
